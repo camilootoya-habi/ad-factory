@@ -1,26 +1,252 @@
+/* Tokens de marca copiados verbatim del Habi Brand Center
+   (~/habi-brand-guide/next/lib/tokens/design-tokens.css). No editar aquí:
+   si cambia el brand center, se vuelve a copiar. */
+@import "../styles/design-tokens.css";
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Tailwind v4 resuelve sus utilidades a los tokens de marca. Ningún hex suelto
+   en componentes: si no está aquí, no existe. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-depth: var(--brand-depth);
+  --color-brand-alt: var(--brand-alt);
+
+  --color-purple-50: var(--purple-50);
+  --color-purple-100: var(--purple-100);
+  --color-purple-200: var(--purple-200);
+  --color-purple-300: var(--purple-300);
+  --color-purple-400: var(--purple-400);
+  --color-purple-500: var(--purple-500);
+  --color-purple-600: var(--purple-600);
+  --color-purple-700: var(--purple-700);
+  --color-purple-800: var(--purple-800);
+  --color-purple-900: var(--purple-900);
+  --color-purple-950: var(--purple-950);
+
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  --color-content-primary: var(--color-content-primary);
+  --color-content-secondary: var(--color-content-secondary);
+  --color-content-tertiary: var(--color-content-tertiary);
+  --color-content-inverse: var(--color-content-inverse);
+  --color-content-brand: var(--color-content-brand);
+  --color-content-error: var(--color-content-error);
+  --color-content-success: var(--color-content-success);
+
+  --color-surface-primary: var(--color-surface-primary);
+  --color-surface-secondary: var(--color-surface-secondary);
+  --color-surface-tertiary: var(--color-surface-tertiary);
+  --color-surface-inverse: var(--color-surface-inverse);
+  --color-surface-accent: var(--color-surface-accent);
+
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-default: var(--color-border-default);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-brand: var(--color-border-brand);
+  --color-border-focus: var(--color-border-focus);
+
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-edge: var(--sidebar-edge);
+
+  --font-headings: var(--font-headings);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --radius-kbd: var(--radius-kbd);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  --ease-brand: var(--ease);
+  --ease-out-brand: var(--ease-out);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============ Resets editoriales (portados del brand center) ============ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  background: var(--color-surface-primary);
+  color: var(--color-content-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings — Montserrat (regla Keychain 3.0) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headings);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+img,
+svg {
+  display: block;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* Sin itálicas, nunca — regla tipográfica inmutable del brand center. */
+em, i {
+  font-style: normal;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: var(--radius-pill);
+}
+
+/* ============ Recetas de UI (DESIGN.md §5 del brand center) ============ */
+
+/* Label editorial: la firma del sistema. 11px / 600 / tracking ancho / mayúsculas. */
+.label-editorial {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-content-tertiary);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg);
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: opacity var(--dur-state) var(--ease-out), background var(--dur-state) var(--ease-out);
+}
+.btn-primary:hover:not(:disabled) { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--brand-primary);
+  color: var(--color-content-inverse);
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background var(--dur-state) var(--ease-out);
+}
+.btn-brand:hover:not(:disabled) { background: var(--brand-depth); }
+.btn-brand:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--button-ghost-bg);
+  color: var(--button-ghost-fg);
+  border: 1px solid var(--button-ghost-border);
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background var(--dur-state) var(--ease-out), color var(--dur-state) var(--ease-out);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--button-ghost-bg-hover);
+  color: var(--button-ghost-fg-hover);
+}
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.input-brand,
+.select-brand,
+.textarea-brand {
+  width: 100%;
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--color-content-primary);
+  transition: border-color var(--dur-state) var(--ease-out);
+}
+.input-brand:focus,
+.select-brand:focus,
+.textarea-brand:focus {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  border-color: var(--color-border-brand);
+}
+
+/* Tarjeta: plana en reposo, la sombra es respuesta a estado. */
+.card {
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  transition: box-shadow var(--dur-state) var(--ease-out), transform var(--dur-state) var(--ease-out);
+}
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
