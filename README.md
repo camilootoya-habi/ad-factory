@@ -29,11 +29,19 @@ npm run dev                  # http://localhost:3000
 | `/creativos` | Registro de piezas armadas con su UTM y su PNG |
 | `/render/<id>` | Ruta desnuda que monta sólo la pieza a tamaño real — la captura el batch |
 
-Batch de los 6 presets (requiere `npm run dev` corriendo y las capas generadas):
+Con `npm run dev` corriendo:
 
 ```bash
-npm run render:presets       # → .renders/<utm_content>.png
+npm run generate:presets     # genera en Replicate las capas que falten de los 6 presets
+npm run generate:presets -- --dry-run   # sólo resuelve hashes, no gasta crédito
+npm run render:presets       # los 6 PNG en .renders/, vía Chrome headless
+npm run smoke                # prueba de humo en navegador real (rutas + export + batch)
+npm run typecheck            # tsc --noEmit
 ```
+
+`npm run smoke` es la prueba que importa: abre la app en Chrome, exporta un PNG desde el
+navegador y verifica que **coincide con el que saca el batch** — la divergencia entre preview
+y archivo es el modo de falla que este diseño existe para prevenir.
 
 ## Cómo está armado
 
@@ -46,6 +54,8 @@ src/lib/utm.ts        slug por atributos → utm_content; el PNG se llama igual
 src/lib/store/        interfaz Store + drivers fs / memory / supabase
 src/lib/export/       DOM → PNG en el browser (modern-screenshot), zip
 scripts/render.mjs    batch con puppeteer-core + Chrome local
+scripts/smoke.mjs     prueba de humo en navegador (rutas, export, paridad con el batch)
+scripts/generate-presets.mjs   genera las capas de los presets por las rutas locales
 ```
 
 Reglas que el código hace cumplir:

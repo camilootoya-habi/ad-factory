@@ -9,6 +9,15 @@ type GlyphKind = NonNullable<Cta["glyph"]>;
 /** Glifos del CTA como SVG inline: círculo `bg` con símbolo `fg`. */
 function Glyph({ kind, size, bg, fg }: { kind: GlyphKind; size: number; bg: string; fg: string }) {
   if (kind === "none") return null;
+  // `caret-down` es la cuña sólida de la referencia 3: no lleva círculo detrás y se pinta
+  // con el color del símbolo, no con el del contenedor.
+  if (kind === "caret-down") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 60 60" aria-hidden style={{ flex: "none", display: "block" }}>
+        <path d="M8 20 H52 L30 44 Z" fill={bg} />
+      </svg>
+    );
+  }
   return (
     <svg width={size} height={size} viewBox="0 0 60 60" aria-hidden style={{ flex: "none", display: "block" }}>
       <circle cx="30" cy="30" r="30" fill={bg} />

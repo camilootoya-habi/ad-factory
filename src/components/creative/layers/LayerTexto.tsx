@@ -9,6 +9,9 @@ import { TextBlock } from "./TextBlock";
 const DOT_CU = 32;
 const LINE_CU = 3;
 const DOT_STROKE_CU = 2;
+/** Longitud del trazo que sale del punto hacia el protagonista (≈7% y ≈4% del canvas). */
+const LEAD_H_CU = 78;
+const LEAD_V_CU = 44;
 
 function Bullets({ texto, format, color }: { texto: Texto; format: Format; color: string }) {
   const px = boxToPx(texto.box, format);
@@ -42,28 +45,29 @@ function Bullets({ texto, format, color }: { texto: Texto; format: Format; color
 type Segment = { x1: number; y1: number; x2: number; y2: number } | null;
 
 /**
- * Punto de conexión: del centro del punto al borde más cercano de la caja del texto.
- * Si el punto queda dentro del rango vertical/horizontal de la caja la línea sale recta,
- * como en la referencia; si no, va al punto del borde más próximo.
+ * La línea nace en el punto y avanza HACIA EL PROTAGONISTA, es decir en dirección contraria
+ * a la caja del texto: el punto queda pegado al texto y el trazo apunta a la casa, como en
+ * la referencia 3. Se toma la dirección dominante (horizontal o vertical).
  */
 function connector(c: Callout, texto: Texto, format: Format): Segment {
   const { w, h } = FORMATS[format];
+  const u = unitFor(format);
   const dx = (c.dot[0] / 100) * w;
   const dy = (c.dot[1] / 100) * h;
   const px = boxToPx(c.box, format);
   const font = fontStyle(c.size ?? texto.size, format, { lineHeight: texto.lineHeight });
   const height = px.height ?? lineCount(c.runs) * font.fontSize * font.lineHeight;
-  const x1 = px.left;
-  const x2 = px.left + px.width;
-  const y1 = px.top;
-  const y2 = px.top + height;
-  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+  const cx = px.left + px.width / 2;
+  const cy = px.top + height / 2;
+  const ddx = dx - cx;
+  const ddy = dy - cy;
 
-  if (dx > x2) return { x1: dx, y1: dy, x2, y2: clamp(dy, y1, y2) }; // caja a la izquierda → borde derecho
-  if (dx < x1) return { x1: dx, y1: dy, x2: x1, y2: clamp(dy, y1, y2) }; // caja a la derecha → borde izquierdo
-  if (dy > y2) return { x1: dx, y1: dy, x2: clamp(dx, x1, x2), y2 }; // caja arriba → borde inferior
-  if (dy < y1) return { x1: dx, y1: dy, x2: clamp(dx, x1, x2), y2: y1 }; // caja abajo → borde superior
-  return null; // el punto cae dentro de la caja: no hay línea
+  if (Math.abs(ddx) >= Math.abs(ddy)) {
+    const lead = (ddx >= 0 ? 1 : -1) * LEAD_H_CU * u;
+    return { x1: dx, y1: dy, x2: dx + lead, y2: dy };
+  }
+  const lead = (ddy >= 0 ? 1 : -1) * LEAD_V_CU * u;
+  return { x1: dx, y1: dy, x2: dx, y2: dy + lead };
 }
 
 function Callouts({ texto, format, color }: { texto: Texto; format: Format; color: string }) {

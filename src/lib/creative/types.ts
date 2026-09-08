@@ -219,7 +219,7 @@ export type CtaVariant =
 export type Cta = {
   label: Run[];
   variant: CtaVariant;
-  glyph?: "play" | "chevron-down" | "arrow-right" | "none";
+  glyph?: "play" | "chevron-down" | "caret-down" | "arrow-right" | "none";
   box: Box;
   /** Colores opcionales para romper la variante sin crear otra. */
   containerColor?: Color;

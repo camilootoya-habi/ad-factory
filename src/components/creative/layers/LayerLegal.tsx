@@ -2,7 +2,9 @@ import { backgroundKindUnder, fontStyle, inkOver } from "@/lib/creative/layout";
 import { unitFor } from "@/lib/creative/scale";
 import { Z, type LayerProps } from "./shared";
 
-const MARGIN_CU = 28;
+const MARGIN_CU = 18;
+/** En la referencia el legal mide ~1% del canvas: más pequeño que `caption`. */
+const SIZE_CU = 13;
 
 /** Capa 7: legal en caption, abajo a la derecha ("*AplicanTyC", ref. 3). */
 export function LayerLegal({ spec, format }: LayerProps) {
@@ -20,6 +22,7 @@ export function LayerLegal({ spec, format }: LayerProps) {
         color: inkOver(backgroundKindUnder(spec, "bottom-right")),
         whiteSpace: "nowrap",
         ...font,
+        fontSize: SIZE_CU * u,
       }}
     >
       {spec.legal}

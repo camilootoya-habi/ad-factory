@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "render": "node scripts/render.mjs",
+    "render:presets": "node scripts/render.mjs --presets",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node scripts/smoke.mjs",
+    "generate:presets": "node scripts/generate-presets.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.6",
