@@ -43,3 +43,7 @@ next-env.d.ts
 
 # claude code (config local, no compartida)
 .claude/settings.local.json
+
+# caché local de capas generadas
+.ad-factory-cache/
+.renders/
