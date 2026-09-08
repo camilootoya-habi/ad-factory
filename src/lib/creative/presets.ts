@@ -40,9 +40,9 @@ export const PRESETS: Record<string, CreativeSpec> = {
       recipe: {
         tipo: "arte-tipografico",
         encuadre: "detalle",
-        copy: "Con Habi puedes vender una propiedad MÁS RÁPIDO y 100% SEGURO\nen 1 sola visita.\nTRAMITE GARANTIZADO.",
+        copy: "Con Habi puedes vender una\npropiedad MÁS RÁPIDO\ny 100% SEGURO\nen 1 sola visita.\nTRAMITE GARANTIZADO.",
         sujeto:
-          "letras de grafiti estilo aerosol, tipografía bubble redondeada con volumen, relleno degradado de violeta a lila con brillos blancos, contorno morado oscuro, halos suaves de aerosol alrededor; las dos primeras líneas grandes y ligeramente arqueadas, la tercera en cursiva caligráfica, la cuarta en mayúsculas condensadas; composición centrada",
+          "letras de grafiti estilo aerosol, tipografía bubble redondeada con volumen, relleno degradado de violeta a lila con brillos blancos, contorno morado oscuro, halos suaves de aerosol alrededor; las tres primeras líneas grandes y ligeramente arqueadas, la cuarta en cursiva caligráfica más pequeña, la quinta en mayúsculas condensadas con un subrayado a mano; composición centrada",
         libre: "sobre fondo blanco puro y liso, sin pared, sin sombras proyectadas",
       },
       anchor: "center",
@@ -115,7 +115,7 @@ export const PRESETS: Record<string, CreativeSpec> = {
       box: { x: -1, y: 57, w: 42, h: 14 },
       size: "display-lg",
     },
-    logo: { slot: "bottom-left", heightCu: 108, format: "completo", treatment: "colorSobreBlanco", marginCu: 56 },
+    logo: { slot: "bottom-left", heightCu: 108, format: "completo", treatment: "blanco", marginCu: 56 },
     layouts: {
       "9x16": {
         titulo: {
@@ -196,7 +196,7 @@ export const PRESETS: Record<string, CreativeSpec> = {
       box: { x: 4, y: 20, w: 92 },
     },
     texto: {
-      size: "body",
+      size: "body-sm",
       align: "center",
       box: { x: 0, y: 0, w: 0 },
       color: "white",
