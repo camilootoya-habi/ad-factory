@@ -11,6 +11,8 @@
  *     canvas con el que saca el batch de Chrome (el modo de falla que hay que evitar:
  *     que el preview y el export divergan).
  *  4. La UTM visible describe la pieza y el archivo se llama igual que utm_content.
+ *  5. En las 6 piezas el logo respeta el mínimo de 24 px y nada invade su clear space
+ *     (salvo el contenedor del CTA cuando el logo va dentro, que es lo esperado).
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -161,8 +163,59 @@ try {
   fail(`fábrica: ${e.message}`);
 }
 
+/* ------------------- 4. reglas del logo en las 6 piezas ------------------- */
+console.log("\n4. Reglas del logo: mínimos y clear space");
+// Clear space = 1x la altura de la "h" del wordmark; en habi-color.svg (canvas 500) mide 103.
+const CLEAR_RATIO = 103 / 500;
+const PRESET_KEYS = ["01-grafiti-muro", "02-mujer-encontro-comprador", "03-casa-infografia", "04-mujer-vende-tu-apto", "05-celular-compra-o-vende", "06-interior-listo-para-vender"];
+for (const key of PRESET_KEYS) {
+  try {
+    const { page } = await visit(`/render/preset:${key}`, { waitFor: '[data-creative-root][data-creative-ready="true"]' });
+    const r = await page.evaluate((ratio) => {
+      const root = document.querySelector("[data-creative-root]");
+      const base = root.getBoundingClientRect();
+      const rel = (el) => {
+        const b = el.getBoundingClientRect();
+        return { x: b.left - base.left, y: b.top - base.top, w: b.width, h: b.height };
+      };
+      const logoEl = root.querySelector('[data-layer="logo"] img') ?? root.querySelector('[data-layer="logo"]');
+      if (!logoEl) return { noLogo: true };
+      const lg = rel(logoEl);
+      const cs = lg.h * ratio;
+      // Caja reservada: el dibujo mas el clear space en los 4 lados.
+      const box = { x: lg.x - cs, y: lg.y - cs, w: lg.w + cs * 2, h: lg.h + cs * 2 };
+      const slot = logoEl.getAttribute("data-slot") ?? "";
+      const hits = [];
+      for (const layer of ["titulo", "texto", "cta"]) {
+        const el = root.querySelector(`[data-layer="${layer}"]`);
+        if (!el) continue;
+        const b = rel(el);
+        const overlaps = b.x < box.x + box.w && b.x + b.w > box.x && b.y < box.y + box.h && b.y + b.h > box.y;
+        if (overlaps) hits.push(layer);
+      }
+      return { logoH: lg.h, clearSpace: cs, hits, slot };
+    }, CLEAR_RATIO);
+    await page.close();
+
+    if (r.noLogo) {
+      fail(`${key}: no se renderizó el logo`);
+      continue;
+    }
+    if (r.logoH >= 24) ok(`${key}: logo de ${Math.round(r.logoH)} px (mínimo 24)`);
+    else fail(`${key}: logo de ${Math.round(r.logoH)} px, por debajo del mínimo de 24`);
+
+    // El logo in-cta vive DENTRO del contenedor del CTA: ahí el solape es intencional.
+    const inCta = r.slot === "in-cta";
+    const invaden = r.hits.filter((h) => !(inCta && h === "cta"));
+    if (invaden.length === 0) ok(`${key}: nada invade el clear space (${Math.round(r.clearSpace)} px)`);
+    else fail(`${key}: ${invaden.join(", ")} invade(n) el clear space del logo`);
+  } catch (e) {
+    fail(`${key}: ${e.message}`);
+  }
+}
+
 /* ------------------ 4. el batch coincide con el navegador ------------------ */
-console.log("\n3. El batch de Chrome coincide con la descarga del navegador");
+console.log("\n5. El batch de Chrome coincide con la descarga del navegador");
 try {
   const outDir = path.join(downloadDir, "batch");
   execFileSync(process.execPath, ["scripts/render.mjs", `preset:${PRESET}`, "--out", outDir, "--base", base], {

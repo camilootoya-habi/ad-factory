@@ -107,7 +107,7 @@ export function LayerLogo({ spec, format, showClearSpace }: LayerProps & { showC
 
   return (
     <>
-      <img data-layer="logo" data-treatment={treatment} src={logoSrc(logoFormat, treatment)} alt="" draggable={false} style={style} />
+      <img data-layer="logo" data-slot={slot} data-treatment={treatment} src={logoSrc(logoFormat, treatment)} alt="" draggable={false} style={style} />
       {showClearSpace && (
         <div
           data-layer="logo-clearspace"
