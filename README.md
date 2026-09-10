@@ -9,7 +9,7 @@ describe la pieza rasgo por rasgo.
 | --- | --- |
 | Framework | Next.js 16 (App Router, `src/`, TypeScript, Tailwind v4 sobre los tokens del Habi Brand Center) |
 | Imágenes | Replicate: `google/nano-banana-pro` (generación) + `bria/remove-background` (recortes) |
-| Persistencia | Caché local en `.ad-factory-cache/` (default). Supabase Storage listo pero dormido: ver `TODO.md` |
+| Persistencia | Local: caché en `.ad-factory-cache/`. Producción: Supabase Storage + Postgres — ver `TODO.md` |
 | Export | El mismo componente `<Creative>` para preview, descarga en el browser y batch en Chrome headless |
 | Hosting | Vercel — deploy automático en cada push a `main` |
 

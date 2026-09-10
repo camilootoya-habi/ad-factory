@@ -1,25 +1,29 @@
-# TODO — Conectar Supabase (Storage + Postgres)
+# Supabase (Storage + Postgres) — aplicado
 
-> Para quien tenga permisos de administrador en el proyecto Supabase `kuiotuomibomlkxrnifc`.
-> Este documento se puede seguir de arriba abajo **sin abrir ningún archivo `.ts`**.
+> Proyecto Supabase `kuiotuomibomlkxrnifc`. Las secciones 2, 3 y 4 **ya están aplicadas**
+> (2026-09-10); quedan como referencia de qué existe y para poder recrearlo. Lo que falta
+> está en la sección 5 (probar en producción) y en la 7 (fuera de v1).
 
-## 1. Qué existe ya y qué falta
+## 1. Estado
 
-La app funciona completa en local con caché en disco (`.ad-factory-cache/`). La capa de
-persistencia está detrás de una sola interfaz (`Store`) con tres drivers:
+Producción corre con Supabase. La capa de persistencia está detrás de una sola interfaz
+(`Store`) con tres drivers:
 
 | Driver | Se activa con | Estado |
 | --- | --- | --- |
-| `fs` | `STORE_DRIVER=fs` (default) | Funciona. Es lo que se usa hoy en local. |
-| `memory` | automático en Vercel si no hay Supabase | Funciona, pero las capas se pierden entre invocaciones. |
-| `supabase` | `STORE_DRIVER=supabase` + llaves | **Código completo en `src/lib/store/supabase.ts`, sin probar** porque no hay llaves. |
+| `fs` | `STORE_DRIVER=fs` (default local) | Funciona. Es lo que se usa en esta máquina. |
+| `memory` | automático en Vercel si no hay Supabase | Funciona, pero las capas se pierden entre invocaciones. Es lo que usan los **Preview**. |
+| `supabase` | `STORE_DRIVER=supabase` + llaves | **Activo en Production.** Buckets y tablas creados; falta la prueba end-to-end de la sección 5. |
 
-Lo que falta es **infraestructura**, no código: crear 2 buckets, 3 tablas, poner 4 variables
-de entorno y correr un script de migración. No se espera ningún cambio en el front.
+| Entorno | Driver | Por qué |
+| --- | --- | --- |
+| Local (esta máquina) | `fs` | No hay `SUPABASE_SECRET_KEY` en `.env.local` — ver sección 4 |
+| Vercel Preview | `memory` (fallback) | `STORE_DRIVER` no está puesto en Preview y ahí tampoco hay secret key |
+| Vercel Production | `supabase` | `STORE_DRIVER=supabase` + `SUPABASE_SECRET_KEY` |
 
-## 2. Buckets de Storage
+## 2. Buckets de Storage — ✅ creados
 
-Dashboard → Storage → New bucket. Crear dos:
+Creados vía SQL con los límites y MIME de la tabla:
 
 | Bucket | Público | Tamaño máx. por archivo | MIME permitidos | Ruta de los objetos |
 | --- | --- | --- | --- | --- |
@@ -32,19 +36,24 @@ devuelve la URL pública del PNG para que se pueda compartir el enlace.
 
 Los PNG de protagonista a 2K con canal alfa pesan entre 2 y 8 MB; por eso el límite de 20 MB.
 
-Equivalente por SQL (si se prefiere a los clics):
+SQL aplicado (migración `ad_factory_storage_buckets`, idempotente):
 
 ```sql
-insert into storage.buckets (id, name, public) values ('layers', 'layers', false) on conflict (id) do nothing;
-insert into storage.buckets (id, name, public) values ('renders', 'renders', true) on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('layers', 'layers', false, 20971520, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('renders', 'renders', true, 20971520, array['image/png'])
+on conflict (id) do nothing;
 ```
 
 La escritura la hace **sólo el servidor** con la secret key (que salta RLS), así que no hacen
 falta políticas de Storage para `anon`/`authenticated`.
 
-## 3. Tablas
+## 3. Tablas — ✅ creadas
 
-Dashboard → SQL Editor → New query. Pegar y ejecutar completo:
+Aplicado como migración `ad_factory_core_tables`. Queda aquí completo para poder recrearlo:
 
 ```sql
 -- Capas de imagen generadas (protagonistas y fondos). El hash es sha256(model+prompt+attrs)
@@ -97,6 +106,9 @@ create table if not exists public.generations (
   created_at     timestamptz not null default now()
 );
 create index if not exists generations_status_idx on public.generations (status);
+-- Postgres no indexa las FK por su cuenta: sin este índice el `on delete set null`
+-- de assets.hash obliga a un seq scan de generations.
+create index if not exists generations_asset_hash_idx on public.generations (asset_hash);
 
 -- RLS: habilitado. En v1 sólo escribe y lee el servidor con la secret key (que salta RLS),
 -- así que NO se crean políticas para anon/authenticated. Ver sección 6 para abrirlo después.
@@ -113,51 +125,61 @@ where table_schema = 'public' and table_name in ('assets', 'creatives', 'generat
 -- deben salir las 3
 ```
 
-## 4. Variables de entorno
+## 4. Variables de entorno — ✅ puestas en Vercel
 
-Dashboard → Project Settings → API. Copiar:
+Proyecto de Vercel: `marketing-habi/ad-factory` (`prj_ewUQA1amabioZLVjIym5OmdwDsfr`).
+Estado real hoy:
 
-| Variable | Dónde ponerla | Valor |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | `.env.local` y Vercel | `https://kuiotuomibomlkxrnifc.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `.env.local` y Vercel | la `sb_publishable_…` |
-| `SUPABASE_SECRET_KEY` | `.env.local` y Vercel (**nunca** con prefijo `NEXT_PUBLIC_`) | la `sb_secret_…` (o `service_role` en proyectos viejos) |
-| `STORE_DRIVER` | `.env.local` y Vercel | `supabase` |
-| `REPLICATE_API_TOKEN` | `.env.local` y Vercel | el `r8_…` del equipo (ya lo usa la app en local) |
+| Variable | Vercel | Tipo | `.env.local` |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development | Config | ✅ |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Production, Preview, Development | Config | ✅ |
+| `SUPABASE_SECRET_KEY` | Production | Secret | ❌ (ver abajo) |
+| `STORE_DRIVER` (`supabase`) | Production | Config | ❌ — local corre en `fs` |
+| `REPLICATE_API_TOKEN` | Production, Preview, Development | Secret | ✅ |
 
-En Vercel: proyecto `ad-factory-x17t` → Settings → Environment Variables → marcar Production
-y Preview. Después de guardar, **Redeploy** (las envs no se aplican al deploy anterior).
+Las `NEXT_PUBLIC_*` son tipo **Config** a propósito: Vercel no expone las Secret al build y
+Next las necesita en build time. `SUPABASE_SECRET_KEY` y `REPLICATE_API_TOKEN` sólo se leen en
+runtime (rutas `/api/*` y `/render/*`, todas dinámicas), así que Secret es correcto y no rompe
+el build — verificado con `STORE_DRIVER=supabase npm run build` sin secret key en el entorno.
 
-## 5. Orden de activación y prueba
+`SUPABASE_SECRET_KEY` la creó la integración de Supabase↔Vercel y **sólo existe en
+Production**. Vercel no permite leer el valor de una Secret (`vercel env pull` escribe
+`[SENSITIVE]`), así que no está en `.env.local` ni en Preview. Consecuencia buscada:
 
-Cada paso dice qué comando correr y qué debe pasar.
+- **Local** corre con `STORE_DRIVER=fs`. Para probar el driver de Supabase en local hay que
+  copiar la `sb_secret_…` del dashboard (Project Settings → API keys) a `.env.local` y poner
+  `STORE_DRIVER=supabase`.
+- **Preview** no tiene `STORE_DRIVER`, así que cae al fallback `memory` y funciona. Para que
+  los Preview también escriban en Supabase: agregar `SUPABASE_SECRET_KEY` y
+  `STORE_DRIVER=supabase` al target Preview.
 
-1. **Buckets** (sección 2) → en Storage se ven `layers` (privado, candado cerrado) y `renders` (público).
-2. **DDL** (sección 3) → la consulta de verificación devuelve 3 filas.
-3. **Envs en `.env.local`** (sección 4) con `STORE_DRIVER=supabase`.
-4. **Migrar la caché local** (sube lo que ya se generó en esta máquina; idempotente):
+Cuando se cambie una env hay que **redeploy**: las envs no se aplican al deploy anterior.
+
+## 5. Prueba end-to-end
+
+1. **Buckets** (sección 2) → ✅ `layers` privado y `renders` público, con límite de 20 MB.
+2. **DDL** (sección 3) → ✅ la consulta de verificación devuelve las 3 tablas.
+3. **Envs** (sección 4) → ✅ en Vercel Production.
+4. **Migrar la caché local** — **no aplica en esta máquina**: no existe `.ad-factory-cache/`,
+   así que no hay nada que subir. En una máquina que sí tenga caché (y con la secret key en
+   `.env.local`), el script es idempotente:
    ```bash
-   cd ~/ad-factory
    node scripts/migrate-cache-to-supabase.mjs --dry-run   # lista qué subiría, no sube nada
    node scripts/migrate-cache-to-supabase.mjs             # sube capas, renders y creativos
    ```
-   Debe terminar con un resumen tipo `✓ 14 capas · ✓ 6 renders · ✓ 6 creativos · 0 errores`.
-   En Storage → `layers` aparecen archivos `<hash>.png`; en Table Editor → `assets` hay una fila por archivo.
-5. **Arrancar la app**:
-   ```bash
-   npm run dev
-   ```
-   La consola **no** debe mostrar el aviso "Vercel sin Supabase". Si sale
-   `STORE_DRIVER=supabase pero faltan llaves`, falta alguna variable del paso 3.
-6. **Generar una capa nueva**: en `/` → Protagonista → cambiar cualquier atributo → "Generar
-   protagonista". Al terminar, en Storage → `layers` hay un archivo nuevo y en `assets` una fila
-   nueva con ese `hash`. Recargar `/biblioteca`: la capa aparece con su thumbnail servido desde
-   `/api/asset/<hash>` (la ruta hace proxy del bucket; el front no cambia).
-7. **Exportar un creativo**: en `/` → "Guardar creativo". En Storage → `renders/<shortId>/` está
-   el PNG con el nombre de la UTM; en `creatives` hay la fila con `render_path`.
-8. **Envs en Vercel** (sección 4) → Redeploy → repetir 6 y 7 contra la URL de producción.
+   Termina con un resumen tipo `✓ 14 capas · ✓ 6 renders · ✓ 6 creativos · 0 errores`.
+5. **Pendiente — generar una capa en producción**: en `/` → Protagonista → cambiar cualquier
+   atributo → "Generar protagonista". Al terminar, en Storage → `layers` hay un archivo nuevo y
+   en `assets` una fila nueva con ese `hash`. Recargar `/biblioteca`: la capa aparece con su
+   thumbnail servido desde `/api/asset/<hash>` (la ruta hace proxy del bucket privado).
+6. **Pendiente — exportar un creativo en producción**: en `/` → "Guardar creativo". En Storage →
+   `renders/<shortId>/` está el PNG con el nombre de la UTM; en `creatives` hay la fila con
+   `render_path`.
 
-Si algo falla en 6 o 7, el error de la API viene en el JSON de respuesta
+Los pasos 5 y 6 gastan crédito de Replicate, así que se hacen a mano y una sola vez.
+
+Si algo falla en 5 o 6, el error de la API viene en el JSON de respuesta
 (`{ "error": "…" }`) y en los logs del servidor; el driver de Supabase propaga el mensaje
 original de `supabase-js`.
 
